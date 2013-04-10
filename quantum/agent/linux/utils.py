@@ -28,11 +28,14 @@ from eventlet.green import subprocess
 
 from quantum.common import utils
 from quantum.openstack.common import log as logging
+from quantum.openstack.common import trace
 
 
 LOG = logging.getLogger(__name__)
 
 
+@trace.traced(begin_cb=lambda fn, args, kwargs: {'Command': ' '.join(map(str, args[1:]))},
+              name_cb=lambda dflt, fn, args, kwargs: 'exec %s' % args[0])
 def execute(cmd, root_helper=None, process_input=None, addl_env=None,
             check_exit_code=True, return_stderr=False):
     if root_helper:

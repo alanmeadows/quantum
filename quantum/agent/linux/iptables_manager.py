@@ -27,6 +27,7 @@ import os
 from quantum.agent.linux import utils
 from quantum.openstack.common import lockutils
 from quantum.openstack.common import log as logging
+from quantum.openstack.common import trace
 
 LOG = logging.getLogger(__name__)
 # NOTE(vish): Iptables supports chain names of up to 28 characters,  and we
@@ -222,6 +223,8 @@ class IptablesManager(object):
     there's a snat chain that is applied after the POSTROUTING chain.
 
     """
+
+    __metaclass__ = trace.metaclass
 
     def __init__(self, _execute=None, state_less=False,
                  root_helper=None, use_ipv6=False, namespace=None):

@@ -26,6 +26,7 @@ from quantum.common import config
 from quantum import context
 from quantum.openstack.common import importutils
 from quantum.openstack.common import log as logging
+from quantum.openstack.common import trace
 from quantum.openstack.common import loopingcall
 from quantum.openstack.common.rpc import service
 from quantum import wsgi
