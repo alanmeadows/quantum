@@ -24,6 +24,7 @@ import webob.exc
 from quantum.api.v2 import attributes
 from quantum.common import exceptions
 from quantum.openstack.common import log as logging
+from quantum.openstack.common import trace
 from quantum import wsgi
 
 
@@ -74,12 +75,25 @@ def Resource(controller, faults=None, deserializers=None, serializers=None):
         serializer = serializers.get(content_type)
 
         try:
+            simple_args = dict(args)
             if request.body:
                 args['body'] = deserializer.deserialize(request.body)['body']
 
             method = getattr(controller, action)
+            trace_id = request.headers.get('X-Trace-Id')
 
-            result = method(request=request, **args)
+            if trace_id == None:
+                result = method(request=request, **args)
+            else:
+                name = '%s/%s' % (action,  method.__name__)
+                trace_args = {'name': name,
+                              'type': 'api',
+                              'api': {'action': action,
+                                      'controller': str(controller),
+                                      'action_args': simple_args}}
+                with trace.trace(trace_id, trace_args, resume=True):
+                    with trace.Tracer('api %s' % name):
+                        result = method(request=request, **args)
         except (exceptions.QuantumException,
                 netaddr.AddrFormatError) as e:
             LOG.exception(_('%s failed'), action)

@@ -47,6 +47,7 @@ from quantum.extensions import securitygroup as ext_sg
 from quantum.openstack.common import importutils
 from quantum.openstack.common import log as logging
 from quantum.openstack.common import rpc
+from quantum.openstack.common import trace
 from quantum.openstack.common.rpc import proxy
 from quantum.plugins.openvswitch.common import config
 from quantum.plugins.openvswitch.common import constants
@@ -463,6 +464,7 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
         msg = _("Plugin does not support updating provider attributes")
         raise q_exc.InvalidInput(error_message=msg)
 
+    @trace.traced()
     def create_network(self, context, network):
         (network_type, physical_network,
          segmentation_id) = self._process_provider_create(context,
@@ -506,6 +508,7 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
         LOG.debug(_("Created network: %s"), net['id'])
         return net
 
+    @trace.traced()
     def update_network(self, context, id, network):
         self._check_provider_update(context, network['network'])
 
@@ -518,6 +521,7 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
             self._extend_network_dict_l3(context, net)
         return net
 
+    @trace.traced()
     def delete_network(self, context, id):
         session = context.session
         with session.begin(subtransactions=True):
@@ -535,6 +539,7 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
             # the network record, so explicit removal is not necessary
         self.notifier.network_delete(context, id)
 
+    @trace.traced()
     def get_network(self, context, id, fields=None):
         session = context.session
         with session.begin(subtransactions=True):
@@ -544,6 +549,7 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
             self._extend_network_dict_l3(context, net)
         return self._fields(net, fields)
 
+    @trace.traced()
     def get_networks(self, context, filters=None, fields=None,
                      sorts=None,
                      limit=None, marker=None, page_reverse=False):
@@ -566,6 +572,7 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
                 'security-group' in self.supported_extension_aliases}
         return port
 
+    @trace.traced()
     def create_port(self, context, port):
         # Set port status as 'DOWN'. This will be updated by agent
         port['port']['status'] = q_const.PORT_STATUS_DOWN
@@ -580,6 +587,7 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
         self.notify_security_groups_member_updated(context, port)
         return self._extend_port_dict_binding(context, port)
 
+    @trace.traced()
     def get_port(self, context, id, fields=None):
         with context.session.begin(subtransactions=True):
             port = super(OVSQuantumPluginV2, self).get_port(context,
@@ -588,6 +596,7 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
             self._extend_port_dict_binding(context, port)
         return self._fields(port, fields)
 
+    @trace.traced()
     def get_ports(self, context, filters=None, fields=None,
                   sorts=None, limit=None, marker=None,
                   page_reverse=False):
@@ -601,6 +610,7 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
                 self._extend_port_dict_binding(context, port)
         return [self._fields(port, fields) for port in ports]
 
+    @trace.traced()
     def update_port(self, context, id, port):
         session = context.session
 
@@ -629,6 +639,7 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
 
         return self._extend_port_dict_binding(context, updated_port)
 
+    @trace.traced()
     def delete_port(self, context, id, l3_port_check=True):
 
         # if needed, check to see if this is a port owned by

@@ -31,7 +31,7 @@ from quantum.openstack.common import fileutils
 from quantum.openstack.common.gettextutils import _
 from quantum.openstack.common import local
 from quantum.openstack.common import log as logging
-
+from quantum.openstack.common import trace
 
 LOG = logging.getLogger(__name__)
 
@@ -180,7 +180,8 @@ def synchronized(name, lock_file_prefix, external=False, lock_path=None):
                 # (only valid in greenthreads)
                 _semaphores[name] = sem
 
-            with sem:
+            with trace.Tracer('lock %s' % name) as t, sem:
+                t.end()
                 LOG.debug(_('Got semaphore "%(lock)s" for method '
                             '"%(method)s"...'), {'lock': name,
                                                  'method': f.__name__})
@@ -218,7 +219,8 @@ def synchronized(name, lock_file_prefix, external=False, lock_path=None):
 
                         try:
                             lock = InterProcessLock(lock_file_path)
-                            with lock:
+                            with trace.Tracer('flock %s' % name) as t, lock:
+                                t.end()
                                 LOG.debug(_('Got file lock "%(lock)s" at '
                                             '%(path)s for method '
                                             '"%(method)s"...'),
