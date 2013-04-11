@@ -18,3 +18,4 @@ subunit.log
 .tox/
 .venv/
 *.mo
+*.un~
