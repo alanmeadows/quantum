@@ -15,6 +15,7 @@ from eventlet import patcher, tpool, corolocal
 from oslo.config import cfg
 
 trace_opts = [
+    cfg.BoolOpt('trace_enabled', default=False),
     cfg.StrOpt('trace_dir', default=tempfile.gettempdir()),
 ]
 
@@ -56,7 +57,8 @@ class RequestIdHook(tpool.ExecuteHook):
         if self.request_id != None:
             del _native_local.request_id
 
-tpool.add_execute_hook(RequestIdHook)
+if CONF.trace_enabled:
+    tpool.add_execute_hook(RequestIdHook)
 
 def _dict_union(a, b):
     if a == None and b == None:
@@ -104,7 +106,8 @@ def _traced_http_request(fn):
             return fn(*args, **kwargs)
     return wrapper
 
-httplib2.Http.request = _traced_http_request(httplib2.Http.request)
+if CONF.trace_enabled:
+    httplib2.Http.request = _traced_http_request(httplib2.Http.request)
 
 BEGIN = 'B'
 END = 'E'
@@ -112,6 +115,10 @@ METADATA = 'M'
 
 @contextlib.contextmanager
 def trace(request_id, args=None, resume=False):
+    if not CONF.trace_enabled:
+        yield
+        return
+
     if not resume:
         # Make sure the file exists and is empty.
         with _open_trace_file(request_id, os.O_CREAT | os.O_TRUNC) as f:
@@ -129,6 +136,9 @@ def trace(request_id, args=None, resume=False):
         del _eventlet_local.request_id
 
 def emit(type, name=None, args=None, tags=None):
+    if not CONF.trace_enabled:
+        return
+
     try:
         request_id = _current_request_id()
     except AttributeError:
@@ -186,6 +196,8 @@ class Tracer(object):
 
 def trace_class_dict(class_name, class_dict):
     '''Call from a metaclass's __new__ method.'''
+    if not CONF.trace_enabled:
+        return
     # Wrap all of the functions in our @traced decorator. Take special care
     # for @classmethod and @staticmethod functions to wrap the functions
     # that they wrap; they're actually descriptor objects and very tricky!
@@ -218,7 +230,9 @@ def traced(begin_args=None, end_args=None, begin_cb=None,
         name_cb = lambda dflt, fn, args, kwargs: dflt
 
     def decorator(o):
-        if isinstance(o, (types.TypeType, types.ClassType)):
+        if not CONF.trace_enabled:
+            return o
+        elif isinstance(o, (types.TypeType, types.ClassType)):
             return class_decorator(o)
         elif isinstance(o, types.ModuleType):
             return module_decorator(o)
