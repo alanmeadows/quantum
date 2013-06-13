@@ -141,8 +141,8 @@ class ProxyDaemon(daemon.Daemon):
         handler = NetworkMetadataProxyHandler(
             self.network_id,
             self.router_id)
-        proxy = wsgi.Server('quantum-network-metadata-proxy')
-        proxy.start(handler, self.port)
+        proxy = wsgi.Server('quantum-network-metadata-proxy', self.port)
+        proxy.start(handler)
         proxy.wait()
 
 
