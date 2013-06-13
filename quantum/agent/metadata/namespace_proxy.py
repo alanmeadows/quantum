@@ -75,18 +75,15 @@ class NetworkMetadataProxyHandler(object):
         LOG.debug(_("Request: %s"), req)
         try:
             return self._proxy_request(req.remote_addr,
-                                       req.method,
                                        req.path_info,
-                                       req.query_string,
-                                       req.body)
-        except Exception:
+                                       req.query_string)
+        except Exception, e:
             LOG.exception(_("Unexpected error."))
             msg = _('An unknown error has occurred. '
                     'Please try your request again.')
             return webob.exc.HTTPInternalServerError(explanation=unicode(msg))
 
-    def _proxy_request(self, remote_address, method, path_info,
-                       query_string, body):
+    def _proxy_request(self, remote_address, path_info, query_string):
         headers = {
             'X-Forwarded-For': remote_address,
         }
@@ -106,9 +103,7 @@ class NetworkMetadataProxyHandler(object):
         h = httplib2.Http()
         resp, content = h.request(
             url,
-            method=method,
             headers=headers,
-            body=body,
             connection_type=UnixDomainHTTPConnection)
 
         if resp.status == 200:
@@ -117,8 +112,6 @@ class NetworkMetadataProxyHandler(object):
             return content
         elif resp.status == 404:
             return webob.exc.HTTPNotFound()
-        elif resp.status == 409:
-            return webob.exc.HTTPConflict()
         elif resp.status == 500:
             msg = _(
                 'Remote metadata server experienced an internal server error.'

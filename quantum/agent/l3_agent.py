@@ -255,8 +255,7 @@ class L3NATAgent(manager.Manager):
             proxy_cmd = ['quantum-ns-metadata-proxy',
                          '--pid_file=%s' % pid_file,
                          '--router_id=%s' % router_info.router_id,
-                         '--state_path=%s' % self.conf.state_path,
-                         '--metadata_port=%s' % self.conf.metadata_port]
+                         '--state_path=%s' % self.conf.state_path]
             proxy_cmd.extend(config.get_log_args(
                 cfg.CONF, 'quantum-ns-metadata-proxy%s.log' %
                 router_info.router_id))
@@ -396,7 +395,6 @@ class L3NATAgent(manager.Manager):
         return (EXTERNAL_DEV_PREFIX + port_id)[:self.driver.DEV_NAME_LEN]
 
     def external_gateway_added(self, ri, ex_gw_port, internal_cidrs):
-
         interface_name = self.get_external_device_name(ex_gw_port['id'])
         ex_gw_ip = ex_gw_port['fixed_ips'][0]['ip_address']
         if not ip_lib.device_exists(interface_name,

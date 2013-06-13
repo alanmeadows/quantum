@@ -134,8 +134,7 @@ class MetadataProxyHandler(object):
             ''))
 
         h = httplib2.Http()
-        resp, content = h.request(url, method=req.method, headers=headers,
-                                  body=req.body)
+        resp, content = h.request(url, headers=headers)
 
         if resp.status == 200:
             LOG.debug(str(resp))
@@ -149,8 +148,6 @@ class MetadataProxyHandler(object):
             return webob.exc.HTTPForbidden()
         elif resp.status == 404:
             return webob.exc.HTTPNotFound()
-        elif resp.status == 409:
-            return webob.exc.HTTPConflict()
         elif resp.status == 500:
             msg = _(
                 'Remote metadata server experienced an internal server error.'
