@@ -47,12 +47,9 @@ def run_server(application, port):
 class Server(object):
     """Server class to manage multiple WSGI sockets and applications."""
 
-    def __init__(self, name, threads=1000):
+    def __init__(self, name, port, host='0.0.0.0', backlog=128, threads=1000):
         self.pool = eventlet.GreenPool(threads)
         self.name = name
-
-    def start(self, application, port, host='0.0.0.0', backlog=128):
-        """Run a WSGI server with the given application."""
         self._host = host
         self._port = port
 
@@ -75,6 +72,9 @@ class Server(object):
                           {'host': host, 'port': port})
             sys.exit(1)
 
+
+    def start(self, application):
+        """Run a WSGI server with the given application."""
         self._server = self.pool.spawn(self._run, application, self._socket)
 
     @property
