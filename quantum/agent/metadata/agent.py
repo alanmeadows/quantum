@@ -176,11 +176,16 @@ class UnixDomainHttpProtocol(eventlet.wsgi.HttpProtocol):
 
 
 class UnixDomainWSGIServer(wsgi.Server):
-    def start(self, application, file_socket, backlog=128):
-        sock = eventlet.listen(file_socket,
-                               family=socket.AF_UNIX,
-                               backlog=backlog)
-        self.pool.spawn_n(self._run, application, sock)
+
+    def __init__(self, name, file_socket, threads=1000, backlog=128):
+        self.pool = eventlet.GreenPool(threads)
+        self.name = name
+        self._socket = eventlet.listen(file_socket,
+                                       family=socket.AF_UNIX,
+                                       backlog=backlog)
+
+    def start(self, application):
+        self.pool.spawn_n(self._run, application, self._socket)
 
     def _run(self, application, socket):
         """Start a WSGI service in a new green thread."""
@@ -213,9 +218,10 @@ class UnixDomainMetadataProxy(object):
             os.makedirs(dirname, 0755)
 
     def run(self):
-        server = UnixDomainWSGIServer('quantum-metadata-agent')
-        server.start(MetadataProxyHandler(self.conf),
-                     self.conf.metadata_proxy_socket)
+        server = UnixDomainWSGIServer(
+            'quantum-metadata-agent',
+            self.conf.metadata_proxy_socket)
+        server.start(MetadataProxyHandler(self.conf))
         server.wait()
 
 
