@@ -61,6 +61,10 @@ class FirewallDriver(object):
         """
         raise NotImplementedError()
 
+    def prepare_port_filter_batch(self, ports):
+        for port in ports:
+            self.prepare_port_filter(port)
+
     def apply_port_filter(self, port):
         """Apply port filter.
 
@@ -71,6 +75,10 @@ class FirewallDriver(object):
         """
         raise NotImplementedError()
 
+    def apply_ports_filter_batch(self, ports):
+        for port in ports:
+            self.apply_port_filter(port)
+
     def update_port_filter(self, port):
         """Refresh security group rules from data store
 
@@ -80,9 +88,17 @@ class FirewallDriver(object):
         """
         raise NotImplementedError()
 
+    def update_port_filter_batch(self, ports):
+        for port in ports:
+            self.update_port_filter(port)
+
     def remove_port_filter(self, port):
         """Stop filtering port"""
         raise NotImplementedError()
+
+    def remove_port_filter_batch(self, ports):
+        for port in ports:
+            self.remove_port_filter(port)
 
     def filter_defer_apply_on(self):
         """Defer application of filtering rule"""
