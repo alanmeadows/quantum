@@ -110,8 +110,7 @@ class SecurityGroupAgentRpcMixin(object):
         devices = self.plugin_rpc.security_group_rules_for_devices(
             self.context, list(device_ids))
         with self.firewall.defer_apply():
-            for device in devices.values():
-                self.firewall.prepare_port_filter(device)
+            self.firewall.prepare_port_filter_batch(devices.values())
 
     def security_groups_rule_updated(self, security_groups):
         LOG.info(_("Security group "
@@ -145,11 +144,13 @@ class SecurityGroupAgentRpcMixin(object):
             return
         LOG.info(_("Remove device filter for %r"), device_ids)
         with self.firewall.defer_apply():
+            ports = []
             for device_id in device_ids:
                 device = self.firewall.ports.get(device_id)
                 if not device:
                     continue
-                self.firewall.remove_port_filter(device)
+                ports.append(device)
+            self.firewall.remove_port_filter_batch(ports)
 
     def refresh_firewall(self):
         LOG.info(_("Refresh firewall rules"))
@@ -159,10 +160,7 @@ class SecurityGroupAgentRpcMixin(object):
         devices = self.plugin_rpc.security_group_rules_for_devices(
             self.context, device_ids)
         with self.firewall.defer_apply():
-            for device in devices.values():
-                LOG.debug(_("Update port filter for %s"), device)
-                self.firewall.update_port_filter(device)
-
+            self.firewall.update_port_filter_batch(devices.values())
 
 class SecurityGroupAgentRpcApiMixin(object):
 

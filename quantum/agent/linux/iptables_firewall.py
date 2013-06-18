@@ -58,6 +58,14 @@ class IptablesFirewallDriver(firewall.FirewallDriver):
         self._setup_chains()
         self.iptables.apply()
 
+    def prepare_port_filter_batch(self, ports):
+        self._remove_chains()
+        for port in ports:
+            self.filtered_ports[port['device']] = port
+        # each security group has it own chains
+        self._setup_chains()
+        self.iptables.apply()
+
     def update_port_filter(self, port):
         LOG.debug(_("Updating device (%s) filter"), port['device'])
         if port['device'] not in self.filtered_ports:
@@ -69,6 +77,17 @@ class IptablesFirewallDriver(firewall.FirewallDriver):
         self._setup_chains()
         self.iptables.apply()
 
+    def update_port_filter_batch(self, ports):
+        self._remove_chains()
+        for port in ports:
+            if port['device'] not in self.filtered_ports:
+                LOG.info(_('Attempted to update port filter which is not '
+                           'filtered %s'), port['device'])
+            else:
+                self.filtered_ports[port['device']] = port
+        self._setup_chains()
+        self.iptables.apply()
+
     def remove_port_filter(self, port):
         LOG.debug(_("Removing device (%s) filter"), port['device'])
         if not self.filtered_ports.get(port['device']):
@@ -77,6 +96,16 @@ class IptablesFirewallDriver(firewall.FirewallDriver):
             return
         self._remove_chains()
         self.filtered_ports.pop(port['device'], None)
+        self._setup_chains()
+        self.iptables.apply()
+
+    def remove_port_filter_batch(self, ports):
+        self._remove_chains()
+        for port in ports:
+            if not self.filtered_ports.get(port['device']):
+                LOG.info(_('Attempted to remove port filter which is not '
+                           'filtered %r'), port)
+            self.filtered_ports.pop(port['device'], None)
         self._setup_chains()
         self.iptables.apply()
 
