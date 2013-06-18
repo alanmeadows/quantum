@@ -7,6 +7,8 @@ covhtml/
 doc/build
 *.DS_Store
 *.pyc
+*.o
+src/dhcp_agent_dnsmasq_lease_update
 quantum.egg-info/
 quantum/vcsversion.py
 quantum/versioninfo
