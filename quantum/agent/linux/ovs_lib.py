@@ -19,6 +19,7 @@
 # @author: Dave Lapsley, Nicira Networks, Inc.
 
 import re
+import json
 
 from quantum.agent.linux import utils
 from quantum.openstack.common import log as logging
@@ -239,10 +240,18 @@ class OVSBridge:
         return edge_ports
 
     def get_vif_port_set(self):
-        edge_ports = set()
         port_names = self.get_port_name_list()
-        for name in port_names:
-            external_ids = self.db_get_map("Interface", name, "external_ids")
+        edge_ports = set()
+        args = ['--format=json', '--', '--columns=name,external_ids',
+                'list', 'Interface']
+        result = self.run_vsctl(args)
+        if not result:
+            result = '{"data":[]}'
+        for row in json.loads(result)['data']:
+            name = row[0]
+            external_ids = dict(row[1][1])
+            if name not in port_names:
+                continue
             if "iface-id" in external_ids and "attached-mac" in external_ids:
                 edge_ports.add(external_ids['iface-id'])
             elif ("xs-vif-uuid" in external_ids and
