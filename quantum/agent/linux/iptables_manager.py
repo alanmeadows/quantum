@@ -23,6 +23,7 @@
 
 import inspect
 import os
+import datetime
 
 from oslo.config import cfg
 
@@ -301,16 +302,16 @@ class IptablesManager(object):
 
     def defer_apply_off(self):
         self.iptables_apply_deferred = False
-        self._apply()
+        self._apply(datetime.datetime.now())
 
     def apply(self):
         if self.iptables_apply_deferred:
             return
 
-        self._apply()
+        self._apply(datetime.datetime.now())
 
     @lockutils.synchronized('iptables', 'quantum-', external=True)
-    def _apply(self):
+    def _apply(self, wait_start):
         """Apply the current in-memory set of iptables rules.
 
         This will blow away any rules left over from previous runs of the
@@ -318,6 +319,7 @@ class IptablesManager(object):
         rules. This happens atomically, thanks to iptables-restore.
 
         """
+        wait_end = datetime.datetime.now()
         s = [('iptables', self.ipv4)]
         if self.use_ipv6:
             s += [('ip6tables', self.ipv6)]
@@ -339,6 +341,10 @@ class IptablesManager(object):
                              process_input='\n'.join(new_filter),
                              root_helper=self.root_helper)
         LOG.debug(_("IPTablesManager.apply completed with success"))
+
+        apply_end = datetime.datetime.now()
+        with open('/home/stack/waittimes.log', 'a') as f:
+            f.write("%s:%s, total=%s, lock=%s\n" % (os.getpid(), id(self), (apply_end - wait_start).total_seconds(), (wait_end-wait_start).total_seconds()))
 
     def _modify_rules(self, current_lines, table, binary=None):
         unwrapped_chains = table.unwrapped_chains
