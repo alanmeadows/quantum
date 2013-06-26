@@ -1,0 +1,30 @@
+#!/usr/bin/python
+
+import json
+import os
+import sys
+
+if __name__ == '__main__':
+   network_id = os.environ.get('QUANTUM_NETWORK_ID')
+   dhcp_relay_socket = os.environ.get('QUANTUM_RELAY_SOCKET_PATH')
+
+   action = sys.argv[1]
+   if action not in ('add', 'del', 'old'):
+       sys.exit()
+
+   mac_address = sys.argv[2]
+   ip_address = sys.argv[3]
+
+   if action == 'del':
+       lease_remaining = 0
+   else:
+       lease_remaining = int(os.environ.get('DNSMASQ_TIME_REMAINING', 0))
+
+   data = dict(network_id=network_id, mac_address=mac_address,
+               ip_address=ip_address, lease_remaining=lease_remaining)
+
+   if os.path.exists(dhcp_relay_socket):
+       sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+       sock.connect(dhcp_relay_socket)
+       sock.send(json.dumps(data))
+       sock.close()
