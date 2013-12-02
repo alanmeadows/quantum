@@ -104,7 +104,11 @@ class QuantumApiService(WsgiService):
 def serve_wsgi(cls):
     try:
         launcher = ProcessLauncher()
+<<<<<<< HEAD
         launcher.launch_server(cls.create(), workers=CONF.api_workers)
+=======
+        launcher.launch_server(cls.create(), workers=CONF.workers)
+>>>>>>> bd1e14456291e8639c604a42c9894e565f91918a
     except Exception:
         LOG.exception(_('In WsgiService.create()'))
         raise
